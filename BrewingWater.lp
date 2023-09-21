@@ -2,18 +2,18 @@
 Minimize
 Total_Salt_Weight: CalciumChloride + Chalk + Epsom + Gypsum + TableSalt
 Subject To
-MaximumCA: 0.27 CalciumChloride + 0.4 Chalk + 0.23 Gypsum <= 1300.79125
-MaximumCl: 0.48 CalciumChloride + 0.6 TableSalt <= 1147.49875
-MaximumHCO3: 0.6 Chalk <= 100
-MaximumMG: 0.1 Epsom <= 355.4875
-MaximumNA: 0.4 TableSalt <= 151.0975
-MaximumSO4: 0.39 Epsom + 0.56 Gypsum <= 994.20625
-MinimumCA: 0.27 CalciumChloride + 0.4 Chalk + 0.23 Gypsum >= 1100.79125
-MinimumCL: 0.48 CalciumChloride + 0.6 TableSalt >= 947.49875
-MinimumHCO3: 0.6 Chalk >= 0
-MinimumMG: 0.1 Epsom >= 155.4875
-MinimumNA: 0.4 TableSalt >= 0
-MinimumSO4: 0.39 Epsom + 0.56 Gypsum >= 794.20625
+ca_max: 0.27 CalciumChloride + 0.4 Chalk + 0.23 Gypsum <= 1210.79125
+ca_min: 0.27 CalciumChloride + 0.4 Chalk + 0.23 Gypsum >= 1190.79125
+cl_max: 0.48 CalciumChloride + 0.6 TableSalt <= 1057.49875
+cl_min: 0.48 CalciumChloride + 0.6 TableSalt >= 1037.49875
+hco3_max: 0.6 Chalk <= 10
+hco3_min: 0.6 Chalk >= 0
+mg_max: 0.1 Epsom <= 265.4875
+mg_min: 0.1 Epsom >= 245.4875
+na_max: 0.4 TableSalt <= 61.0975
+na_min: 0.4 TableSalt >= 41.0975
+so4_max: 0.39 Epsom + 0.56 Gypsum <= 904.20625
+so4_min: 0.39 Epsom + 0.56 Gypsum >= 884.20625
 Bounds
  0 <= CalciumChloride <= 10000
  0 <= Chalk <= 10000

@@ -2,6 +2,7 @@ import itertools
 from collections import OrderedDict
 import functools
 import bisect
+import pulp
 
 # salts
 GYPSUM = "GYPSUM"
@@ -119,6 +120,7 @@ class WaterCalc:
       for ion in ALL_IONS:
         percent_of_ion = salt_addition.ion_percents[ion]
         self.current_ion_mgs[ion] += percent_of_ion * mass_mg
+      return self
 
   def get_ions_as_ppm(self):
     ions_ppm = {}
@@ -137,10 +139,20 @@ class WaterCalc:
     return dict(sorted(differences.items(), key=lambda item: item[1], reverse=True))
 
   def get_total_error_margin(self):
-    differences = self.get_sorted_difference_to_target()
+    target_ions_mgl = self.target_profile.get_ions_in_liters(self.volume_l)
+
+    differences = {}
+    for ion in ALL_IONS:
+      difference = target_ions_mgl[ion] - self.current_ion_mgs[ion]
+      differences[ion] = difference
+
+    # differences = self.get_sorted_difference_to_target()
     error_margin = 0
     for ion in ALL_IONS:
-      error_margin += abs(differences[ion])
+      error_margin += differences[ion]
+
+    print('Error Margin!')
+    print(error_margin)
     return error_margin
 
   def __str__(self):
@@ -263,8 +275,6 @@ def calc_brewing_salts(source, target, gallons):
   find_solutions(original_node)
   n = 1
 
-
-
   for solution in get_top_n_solutions(original_node):
     print('Solution {0}'.format(n))
     n += 1
@@ -277,7 +287,70 @@ def calc_brewing_salts(source, target, gallons):
   # salt_order_combos = list(itertools.permutations(BREWING_SALTS, len(BREWING_SALTS)))
   # print(salt_order_combos)
 
+# GYPSUM = "GYPSUM"
+# CALCIUM_CHLORIDE = "CALCIUM_CHLORIDE"
+# EPSOM = "EPSOM"
+# CHALK = "CHALK"
+# TABLE_SALT = "TABLE_SALT"
+# GYPSUM = SaltAddition(GYPSUM, weight=172, CA=0.23, SO4=0.56)
+# CALCIUM_CHLORIDE = SaltAddition(CALCIUM_CHLORIDE, weight=146, CA=0.27, CL=0.48)
+# EPSOM = SaltAddition(EPSOM, weight=246, MG=0.1, SO4=0.39)
+# CHALK = SaltAddition(CHALK, weight=100, CA=0.40, HCO3=0.60)
+# TABLE_SALT = SaltAddition(TABLE_SALT, weight=58, NA=0.40, CL=0.60)
+
+def linear_programming_solver(source, target, gallons):
+  prob = pulp.LpProblem("BrewingWater", pulp.LpMinimize)
+  water_calc = WaterCalc(gallons_to_liters(gallons), source, target)
+  ion_differences = water_calc.get_sorted_difference_to_target()
+  ACCEPTABLE_ERROR = 10
+
+  def get_acceptable_min(ion):
+    if ion_differences[ion] - ACCEPTABLE_ERROR < 0:
+      return 0
+    else:
+      return ion_differences[ion] - ACCEPTABLE_ERROR
+
+  print(ion_differences)
+  gypsum = pulp.LpVariable("Gypsum", 0, 10000, pulp.LpInteger)
+  cacl = pulp.LpVariable("CalciumChloride", 0, 10000, pulp.LpInteger)
+  epsom = pulp.LpVariable("Epsom", 0, 10000, pulp.LpInteger)
+  chalk = pulp.LpVariable("Chalk", 0, 10000, pulp.LpInteger)
+  table_salt = pulp.LpVariable("TableSalt", 0, 10000, pulp.LpInteger)
+
+  # minimize salt weight
+  prob += gypsum + cacl + epsom + chalk + table_salt, 'Total Salt Weight'
+
+  # constraints
+  # Calcium
+  prob += gypsum * GYPSUM.ion_percents[CA] + cacl * CALCIUM_CHLORIDE.ion_percents[CA] + chalk * CHALK.ion_percents[CA] >= get_acceptable_min(CA), "ca_min"
+  prob += gypsum * GYPSUM.ion_percents[CA] + cacl * CALCIUM_CHLORIDE.ion_percents[CA] + chalk * CHALK.ion_percents[CA] <= ion_differences[CA] + ACCEPTABLE_ERROR, "ca_max"
+  # Chlorine
+  prob += cacl * CALCIUM_CHLORIDE.ion_percents[CL] + table_salt * TABLE_SALT.ion_percents[CL] >= get_acceptable_min(CL), "cl_min"
+  prob += cacl * CALCIUM_CHLORIDE.ion_percents[CL] + table_salt * TABLE_SALT.ion_percents[CL] <= ion_differences[CL] + ACCEPTABLE_ERROR, "cl_max"
+  # SO4
+  prob += gypsum * GYPSUM.ion_percents[SO4] + epsom * EPSOM.ion_percents[SO4] >= get_acceptable_min(SO4), "so4_min"
+  prob += gypsum * GYPSUM.ion_percents[SO4] + epsom * EPSOM.ion_percents[SO4] <= ion_differences[SO4] + ACCEPTABLE_ERROR, "so4_max"
+  # MG
+  prob += epsom * EPSOM.ion_percents[MG] >= get_acceptable_min(MG), "mg_min"
+  prob += epsom * EPSOM.ion_percents[MG] <= ion_differences[MG] + ACCEPTABLE_ERROR, "mg_max"
+  # HCO3
+  prob += chalk * CHALK.ion_percents[HCO3] >= get_acceptable_min(HCO3), "hco3_min"
+  prob += chalk * CHALK.ion_percents[HCO3] <= ion_differences[HCO3] + ACCEPTABLE_ERROR, "hco3_max"
+  # NA
+  prob += table_salt * TABLE_SALT.ion_percents[NA] >= get_acceptable_min(NA), "na_min"
+  prob += table_salt * TABLE_SALT.ion_percents[NA] <= ion_differences[NA] + ACCEPTABLE_ERROR, "na_max"
+
+  prob.writeLP("BrewingWater.lp")
+
+  prob.solve()
+
+  for v in prob.variables():
+    print(v.name, "=", v.varValue)
+
+
+
 def main():
-  calc_brewing_salts(SOURCE_WATER, TARGET_WATER, 6.75)
+  # calc_brewing_salts(SOURCE_WATER, TARGET_WATER, 6.75)
+  linear_programming_solver(SOURCE_WATER, TARGET_WATER, 6.75)
 
 main()
