@@ -202,7 +202,8 @@ def gallons_to_liters(gallons):
 
 SOURCE_WATER = WaterProfile("Source Water", CA=1, MG=0, NA=5, CL=3, SO4=0, HCO3=3, ph=8)
 # TARGET_WATER = WaterProfile("Bavarian Water", CA=22, MG=8, NA=0, CL=39, SO4=31, HCO3=0, ph=8)
-TARGET_WATER = WaterProfile("Bavarian Water", CA=22, MG=8, NA=5, CL=39, SO4=31, HCO3=3, ph=8)
+# TARGET_WATER = WaterProfile("Bavarian Water", CA=22, MG=8, NA=5, CL=39, SO4=31, HCO3=3, ph=8)
+TARGET_WATER = WaterProfile("Festbier Water", CA=48, MG=10, NA=7, CL=44, SO4=35, HCO3=3, ph=8)
 
 GYPSUM = SaltAddition(GYPSUM, weight=172, CA=0.23, SO4=0.56)
 CALCIUM_CHLORIDE = SaltAddition(CALCIUM_CHLORIDE, weight=146, CA=0.27, CL=0.48)
