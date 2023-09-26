@@ -1,3 +1,4 @@
+DECIMAL_PLACES = 2
 
 class Fermentable:
   def __init__(self, name, extract_potential_gu, percent_in_recipe, is_extract = False):
@@ -13,9 +14,12 @@ def get_fermentables_amount(final_gravity_gu, final_volume_g, fermentables, extr
   for fermentable in fermentables:
     print(fermentable.percent_in_recipe)
     ingredient_extract = fermentable.percent_in_recipe * total_gus
-    gravity_per_lb = extract_efficiency_percent * fermentable.extract_potential_gu
+    gravity_per_lb = fermentable.extract_potential_gu
+    if not fermentable.is_extract:
+      gravity_per_lb *= extract_efficiency_percent
+
     ingredient_lbs = ingredient_extract / gravity_per_lb
-    fermentable.lbs_in_recipe = ingredient_lbs
+    fermentable.lbs_in_recipe = round(ingredient_lbs, DECIMAL_PLACES)
 
 def get_total_required_gravity_units(final_gravity_gu, final_volume_g):
   """
@@ -25,10 +29,11 @@ def get_total_required_gravity_units(final_gravity_gu, final_volume_g):
 
 def main():
   fermentables = [
-    Fermentable("2 Row", 30, 0.8),
-    Fermentable("DME", 20, 0.2, True)
+    Fermentable("Wheat", 38, 0.2),
+    Fermentable("Honey", 33, 0.2, True),
+    Fermentable("Two-row", 36, 0.6)
   ]
-  get_fermentables_amount(58, 5, fermentables, 0.7)
+  get_fermentables_amount(44, 5.5, fermentables, 0.68)
 
   print("Fermentables: ")
   for f in fermentables:
